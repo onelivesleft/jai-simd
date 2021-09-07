@@ -16,20 +16,27 @@ main :: () {
     s := to_string(*v128a);
     print("%\n", s);
 
-    v128 = vec128(u16.[0x1111, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666, 0x7777, 0x8888]);
-    print("%\n", v128.u16s);
+    v128_u16 := vec128(u16.[0x1111, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666, 0x7777, 0x8888]);
+    print("%\n", v128_u16.u16s);
 
     v128_a := vec128(u32.[0x99999999, 0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC]);
     print("%\n", v128_a.u32s);
 
     v128_b := vec128(u64.[0xDDDDDDDDDDDDDDDD, 0xEEEEEEEEEEEEEEEE]);
     print("%\n", v128_b.u64s);
+
     foo :: "How long have I studied?  How many times have I read the same books, over and over?  Were I to free us, I would be the most knowledgeable man in England, at least about the contents of my own library, but it is a farce.  I have found nothing!";
     offset := 0;
     truncated: bool = false;
     while offset < foo.count {
         defer offset += 16;
-        v128, truncated = vec128(foo, offset);
-        print("% %\n", to_string(*v128), truncated);
+
+        v128_s, truncated := vec128(foo, offset);
+        print("% %\n", to_string(*v128_s), truncated);
     }
+
+    for vec128(foo)
+        print("% %\n", to_string(*it), it_index);
+
+    print("THE END\n");
 }
