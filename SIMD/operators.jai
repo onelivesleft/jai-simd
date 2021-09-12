@@ -38,11 +38,57 @@ operators :: Operator.[
         .{float32,  "divps.x %1, %2;"},
         .{float64,  "divpd.x %1, %2;"}]},
 
+    .{"shift_left", "Set dest to (dest << src).", .[
+        .{u16,      "psllw.x %1, %2;"},
+        .{s16,      "psllw.x %1, %2;"},
+        .{u32,      "pslld.x %1, %2;"},
+        .{s32,      "pslld.x %1, %2;"},
+        .{u64,      "psllq.x %1, %2;"},
+        .{s64,      "psllq.x %1, %2;"},
+        .{float32,  "pslld.x %1, %2;"},
+        .{float64,  "psllq.x %1, %2;"}]},
+
+    .{"shift_right", "Set dest to (dest >> src).", .[
+        .{u16,      "psrlw.x %1, %2;"},
+        .{s16,      "psrlw.x %1, %2;"},
+        .{u32,      "psrld.x %1, %2;"},
+        .{s32,      "psrld.x %1, %2;"},
+        .{u64,      "psrlq.x %1, %2;"},
+        .{s64,      "psrlq.x %1, %2;"},
+        .{float32,  "psrld.x %1, %2;"},
+        .{float64,  "psrlq.x %1, %2;"}]},
+
+    .{"rotate_left", "Set dest to (dest <<< src).", .[
+        .{u16,      "pslaw.x %1, %2;"},
+        .{s16,      "pslaw.x %1, %2;"},
+        .{u32,      "pslad.x %1, %2;"},
+        .{s32,      "pslad.x %1, %2;"},
+        .{u64,      "pslaq.x %1, %2;"},
+        .{s64,      "pslaq.x %1, %2;"},
+        .{float32,  "pslad.x %1, %2;"},
+        .{float64,  "pslaq.x %1, %2;"}]},
+
+    .{"rotate_right", "Set dest to (dest >>> src).", .[
+        .{u16,      "psraw.x %1, %2;"},
+        .{s16,      "psraw.x %1, %2;"},
+        .{u32,      "psrad.x %1, %2;"},
+        .{s32,      "psrad.x %1, %2;"},
+        .{u64,      "psraq.x %1, %2;"},
+        .{s64,      "psraq.x %1, %2;"},
+        .{float32,  "psrad.x %1, %2;"},
+        .{float64,  "psraq.x %1, %2;"}]},
+
+    .{"clear", "Set dest to 0.", .[
+        .{void,     "xorps.x %1, %1;"}]},
+
     .{"and", "Set dest to (dest & src).", .[
         .{void,     "andps.x %1, %2;"}]},
 
     .{"or", "Set dest to (dest | src).", .[
         .{void,     "orps.x %1, %2;" }]},
+
+    .{"xor", "Set dest to (dest ^ src).", .[
+        .{void,     "xorps.x %1, %2;" }]},
 
     .{"and_not", "Set dest to ((~dest) & src).", .[
         .{void,     "andnps.x %1, %2;"}]},
@@ -127,7 +173,15 @@ operators :: Operator.[
     .{"root", "Set dest to (sqrt(src)).", .[
         .{float32,  "sqrtps.x %1, %2;"}]},
 
-    // @TODO SHUFPS?
+    .{"average", "Set dest to ((dest + src) / 2).", .[
+        .{u8,   "pavgb.x %1, %2;"},
+        .{u16,  "pavgw.x %1, %2;"}]},
 
 
 ];
+
+/* commands with irregular types:
+
+movmskpd, pmovmskb : mask -> u16
+pmaddwd : multiply and add words -> doubles
+*/

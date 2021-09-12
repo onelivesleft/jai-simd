@@ -148,7 +148,24 @@ main :: () {
     #insert #run test(41, "inverse_root", "one", "result", true);
 
     #insert #run test(42, "root", "one", "result", true);
-    
+
+    #insert #run test(43, "xor", "0*", "result", true);
+
+    reset();
+    #insert #run test(44, "add", "2*");
+    #insert #run test(45, "add", "3*");
+    #insert #run test(46, "average", "2*");
+
+    #insert #run test(47, "clear", "0*");
+
+    #insert #run test(48, "add", "one", "one", true);
+    print("%\n", result_u16);
+    //#insert #run test(49, "add", "two", "result", true);
+    //print("%\n", result_u16);
+    #insert #run test(50, "shift_left", "two", "result", true);
+    print("%\n", result_u16);
+    #insert #run test(51, "shift_left", "two", "one", true);
+    print("%\n", result_u16);
 
     { // end of main
         if errors.count != 0

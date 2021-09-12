@@ -37,7 +37,14 @@ calculate :: () #expand {
 
                 for inst.operands {
                     if !contains(active_vec_ids, it.id) {
-                        print_to_builder(*header_builder, "%_ptr : *void = *`%;\n", it.id, it.name);
+                        // @Note size_of Vec128_Pointer is 8
+                        print_to_builder(*header_builder, #string __jai
+#if type_of(`%2).is_pointer
+    %1_ptr : *void = `%2.data;
+else
+    %1_ptr : *void = *`%2;
+
+                        __jai, it.id, it.name);
                         print_to_builder(*asm_builder, "movdqu.x %1:, [%1_ptr];\n", it.id);
                         array_add(*active_vec_ids, it.id);
                     }
@@ -62,7 +69,7 @@ calculate :: () #expand {
                     }
                 }
                 #if !testing {
-                    assert(found, "This operation is not available with this type: %, %\n", inst.id, it.type);
+                    assert(found, "This operation is not available with this type: %, %\n", inst.id, inst.type);
                 }
             }
 
@@ -102,11 +109,9 @@ type_supports_instruction :: (type: Type, instruction_name: string) -> bool {
                 if (op.type == type || op.type == void) && op.code != ""
                     return true;
             }
-
             return false;
         }
     }
-
     return false;
 }
 
@@ -134,26 +139,26 @@ Operand :: struct {
 }
 
 
-operand :: (id: string) -> Operand {
+operand :: (id: string, name: string) -> Operand {
     result : Operand;
     result.id = id;
-    result.name = name_from_id(id);
+    result.name = name;
     return result;
 }
 
 
-instruction :: (id: type_of(Instruction.id), type: Type, operand_a_id: string, operand_b_id: string) -> Instruction {
+instruction :: (id: type_of(Instruction.id), type: Type, operand_a: Operand, operand_b: Operand) -> Instruction {
     result : Instruction = ---;
     result.id = id;
     result.type = type;
-    result.operands[0] = operand(operand_a_id);
-    result.operands[1] = operand(operand_b_id);
+    result.operands[0] = operand_a;
+    result.operands[1] = operand_b;
     return result;
 }
 
 
-add_instruction :: (id: type_of(Instruction.id), type: Type, operand_a_id: string, operand_b_id: string) {
-    array_add(*active_instructions, instruction(id, type, operand_a_id, operand_b_id));
+add_instruction :: (id: type_of(Instruction.id), type: Type, operand_a: Operand, operand_b: Operand) {
+    array_add(*active_instructions, instruction(id, type, operand_a, operand_b));
 }
 
 
@@ -163,16 +168,21 @@ active_written_operands : [..] Operand;
 active_instructions : [..] Instruction;
 
 
-id_from_ident :: (node: *Code_Node) -> id: string {
-    ident := cast(*Code_Ident) node;
-    return sprint("%__simd", ident.name);
-}
-
-name_from_id :: (id: string) -> string {
-    name : string = ---;
-    name.data = id.data;
-    name.count = id.count - 6;
-    return name;
+operand_from_node :: (node: *Code_Node) -> Operand {
+    result : Operand = ---;
+    if node.kind == .IDENT {
+        ident := cast(*Code_Ident) node;
+        result.id = sprint("%__simd", ident.name);
+        result.name = ident.name;
+    }
+    else {
+        binop := cast(*Code_Binary_Operator) node;
+        left := cast(*Code_Ident) binop.left;
+        right := cast(*Code_Ident) binop.right;
+        result.id = sprint("%_%__simd", left.name, right.name);
+        result.name = sprint("%.%", left.name, right.name);
+    }
+    return result;
 }
 
 
@@ -185,6 +195,12 @@ contains :: (haystack: [] $T, needle: T) -> bool {
 
 
 check_node_is_vec128 :: (node: *Code_Node) -> is_vec128: bool, type: Type {
+    if node.kind == .BINARY_OPERATOR {
+        binop := cast(*Code_Binary_Operator)node;
+        is_vec128, type := check_node_is_vec128(binop.right);
+        return is_vec128, type;
+    }
+
     if node.kind != .IDENT  return false, void;
 
     ident := cast(*Code_Ident) node;
@@ -219,7 +235,7 @@ check_node_is_vec128 :: (node: *Code_Node) -> is_vec128: bool, type: Type {
             call := cast(*Code_Procedure_Call)expression;
             type_ident := cast(*Code_Ident) call.procedure_expression;
 
-            if type_ident && type_ident.name == "Vec128" {
+            if type_ident && type_ident.name == "Vec128" || type_ident.name == "Vec128_Pointer" {
                 arg := call.arguments_unsorted[0];
                 arg_ident := cast(*Code_Ident)arg.expression;
                 return true, type_from_name(arg_ident.name);
